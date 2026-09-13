@@ -80,6 +80,62 @@ let best = Number(localStorage.getItem("bestScore")) || 0;
 document.getElementById("best").innerText = best;
 
 
+/* 🔊 SOUND SYSTEM */
+
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSound(frequency, duration, type = "sine") {
+
+    if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+    }
+
+    const oscillator = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    oscillator.type = type;
+    oscillator.frequency.value = frequency;
+
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        audioCtx.currentTime + duration
+    );
+
+    oscillator.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + duration);
+}
+
+
+/* 🎯 HIT SOUND */
+
+function hitSound() {
+    playSound(800, 0.08, "square");
+}
+
+
+/* ❌ MISS SOUND */
+
+function missSound() {
+    playSound(180, 0.15, "sawtooth");
+}
+
+
+/* 🏆 GAME OVER SOUND */
+
+function gameOverSound() {
+
+    playSound(500, 0.15, "sine");
+
+    setTimeout(() => {
+        playSound(300, 0.25, "sine");
+    }, 160);
+}
+
+
 function startGame() {
 
     clearInterval(timer);
@@ -96,7 +152,7 @@ function startGame() {
     updateScreen();
     moveTarget();
     nextTarget();
-    
+
     timer = setInterval(() => {
 
         time--;
@@ -114,6 +170,8 @@ function startGame() {
 function hit() {
 
     if (time <= 0) return;
+
+    hitSound();
 
     score++;
 
@@ -133,9 +191,14 @@ function nextTarget() {
 
     clearTimeout(missTimer);
 
-    let delay = Math.max(450, 1000 - (level - 1) * 80);
+    let delay = Math.max(
+        450,
+        1000 - (level - 1) * 80
+    );
 
     missTimer = setTimeout(() => {
+
+        missSound();
 
         life--;
 
@@ -157,7 +220,10 @@ function updateTargetSize() {
 
     let target = document.getElementById("target");
 
-    let size = Math.max(30, 60 - (level - 1) * 5);
+    let size = Math.max(
+        30,
+        60 - (level - 1) * 5
+    );
 
     target.style.width = size + "px";
     target.style.height = size + "px";
@@ -207,12 +273,18 @@ function endGame() {
 
     updateScreen();
 
-    alert(
-        "🎮 GAME OVER!\n\n" +
-        "Score: " + score +
-        "\nLevel: " + level +
-        "\n🏆 Best: " + best
-    );
+    gameOverSound();
+
+    setTimeout(() => {
+
+        alert(
+            "🎮 GAME OVER!\n\n" +
+            "Score: " + score +
+            "\nLevel: " + level +
+            "\n🏆 Best: " + best
+        );
+
+    }, 300);
 }
 
 </script>
