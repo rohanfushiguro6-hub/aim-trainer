@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Aim Trainer</title>
+
+    <style>
+        body {
+            margin: 0;
+            background: #0b1020;
+            color: white;
+            font-family: Arial;
+            text-align: center;
+        }
+
+        #stats {
+            font-size: 17px;
+            margin: 15px;
+        }
+
+        #game {
+            width: 90%;
+            max-width: 500px;
+            height: 450px;
+            margin: auto;
+            border: 2px solid white;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #target {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 3px solid white;
+            font-size: 20px;
+        }
+
+        button {
+            padding: 12px 22px;
+            font-size: 17px;
+            border: none;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>🎯 AIM TRAINER</h1>
+
+<div id="stats">
+    Score: <span id="score">0</span> |
+    Time: <span id="time">20</span>s |
+    Level: <span id="level">1</span> |
+    ❤️ <span id="life">3</span> |
+    🏆 <span id="best">0</span>
+</div>
+
+<button onclick="startGame()">▶ START / RESTART</button>
+
+<div id="game">
+    <button id="target" onclick="hit()" style="display:none;">🎯</button>
+</div>
+
+<script>
+
+let score = 0;
+let time = 20;
+let level = 1;
+let life = 3;
+
+let timer;
+let moving;
+let missTimer;
+
+let best = Number(localStorage.getItem("bestScore")) || 0;
+
+document.getElementById("best").innerText = best;
+
+
+function startGame() {
+
+    clearInterval(timer);
+    clearInterval(moving);
+    clearTimeout(missTimer);
+
+    score = 0;
+    time = 20;
+    level = 1;
+    life = 3;
+
+    document.getElementById("target").style.display = "block";
+
+    updateScreen();
+    moveTarget();
+    nextTarget();
+    
+    timer = setInterval(() => {
+
+        time--;
+
+        updateScreen();
+
+        if (time <= 0) {
+            endGame();
+        }
+
+    }, 1000);
+}
+
+
+function hit() {
+
+    if (time <= 0) return;
+
+    score++;
+
+    level = Math.floor(score / 5) + 1;
+
+    updateTargetSize();
+
+    moveTarget();
+
+    nextTarget();
+
+    updateScreen();
+}
+
+
+function nextTarget() {
+
+    clearTimeout(missTimer);
+
+    let delay = Math.max(450, 1000 - (level - 1) * 80);
+
+    missTimer = setTimeout(() => {
+
+        life--;
+
+        updateScreen();
+
+        if (life <= 0) {
+            endGame();
+            return;
+        }
+
+        moveTarget();
+        nextTarget();
+
+    }, delay);
+}
+
+
+function updateTargetSize() {
+
+    let target = document.getElementById("target");
+
+    let size = Math.max(30, 60 - (level - 1) * 5);
+
+    target.style.width = size + "px";
+    target.style.height = size + "px";
+}
+
+
+function moveTarget() {
+
+    let game = document.getElementById("game");
+    let target = document.getElementById("target");
+
+    let x = Math.random() *
+        (game.clientWidth - target.offsetWidth);
+
+    let y = Math.random() *
+        (game.clientHeight - target.offsetHeight);
+
+    target.style.left = x + "px";
+    target.style.top = y + "px";
+}
+
+
+function updateScreen() {
+
+    document.getElementById("score").innerText = score;
+    document.getElementById("time").innerText = time;
+    document.getElementById("level").innerText = level;
+    document.getElementById("life").innerText = life;
+    document.getElementById("best").innerText = best;
+}
+
+
+function endGame() {
+
+    clearInterval(timer);
+    clearInterval(moving);
+    clearTimeout(missTimer);
+
+    document.getElementById("target").style.display = "none";
+
+    if (score > best) {
+
+        best = score;
+
+        localStorage.setItem("bestScore", best);
+    }
+
+    updateScreen();
+
+    alert(
+        "🎮 GAME OVER!\n\n" +
+        "Score: " + score +
+        "\nLevel: " + level +
+        "\n🏆 Best: " + best
+    );
+}
+
+</script>
+
+</body>
+</html>
