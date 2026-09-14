@@ -7,5 +7,12 @@
   "display": "standalone",
   "background_color": "#0b1020",
   "theme_color": "#0b1020",
-  "orientation": "portrait"
-}theo
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icons/IMG_20260914_174502.png",
+      "sizes": "any",
+      "type": "image/png"
+    }
+  ]
+}the
