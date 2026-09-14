@@ -2,7 +2,8 @@
 <html>
 <head>
     <title>Aim Trainer</title>
-
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b1020">
     <style>
         body {
             margin: 0;
@@ -286,7 +287,9 @@ function endGame() {
 
     }, 300);
 }
-
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js");
+}
 </script>
 
 </body>
