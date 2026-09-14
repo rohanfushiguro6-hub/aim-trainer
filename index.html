@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aim Trainer V2</title>
+
+<style>
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+  user-select:none;
+}
+
+body{
+  min-height:100vh;
+  background:#080b14;
+  color:white;
+  font-family:Arial,sans-serif;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:15px;
+}
+
+.container{
+  width:100%;
+  max-width:520px;
+  text-align:center;
+}
+
+h1{
+  font-size:30px;
+  margin-bottom:12px;
+}
+
+.stats{
+  display:flex;
+  justify-content:space-around;
+  background:#111827;
+  border:1px solid #263247;
+  border-radius:12px;
+  padding:12px 5px;
+  margin-bottom:12px;
+}
+
+.stat{
+  font-size:14px;
+}
+
+.stat b{
+  display:block;
+  font-size:21px;
+  margin-top:4px;
+}
+
+#game{
+  position:relative;
+  width:100%;
+  height:450px;
+  background:#0d1424;
+  border:2px solid #334155;
+  border-radius:16px;
+  overflow:hidden;
+  touch-action:none;
+}
+
+.target{
+  position:absolute;
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  background:#ef4444;
+  border:4px solid white;
+  box-shadow:0 0 18px #ef4444;
+  cursor:pointer;
+  transform:translate(-50%,-50%);
+}
+
+.target::after{
+  content:"";
+  position:absolute;
+  width:16px;
+  height:16px;
+  background:white;
+  border-radius:50%;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+}
+
+button{
+  margin-top:14px;
+  padding:13px 28px;
+  border:0;
+  border-radius:10px;
+  background:#2563eb;
+  color:white;
+  font-size:17px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+button:active{
+  transform:scale(.96);
+}
+
+#message{
+  margin-top:12px;
+  color:#94a3b8;
+  min-height:20px;
+}
+
+@media(max-width:400px){
+  #game{
+    height:400px;
+  }
+
+  h1{
+    font-size:25px;
+  }
+
+  .stat b{
+    font-size:18px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>🎯 AIM TRAINER V2</h1>
+
+  <div class="stats">
+    <div class="stat">
+      SCORE
+      <b id="score">0</b>
+    </div>
+
+    <div class="stat">
+      TIME
+      <b id="time">30</b>
+    </div>
+
+    <div class="stat">
+      HITS
+      <b id="hits">0</b>
+    </div>
+
+    <div class="stat">
+      ACCURACY
+      <b id="accuracy">0%</b>
+    </div>
+  </div>
+
+  <div id="game"></div>
+
+  <button id="startBtn">START GAME</button>
+
+  <div id="message">Press START GAME to begin</div>
+
+</div>
+
+<script>
+const game = document.getElementById("game");
+const startBtn = document.getElementById("startBtn");
+
+const scoreEl = document.getElementById("score");
+const timeEl = document.getElementById("time");
+const hitsEl = document.getElementById("hits");
+const accuracyEl = document.getElementById("accuracy");
+const messageEl = document.getElementById("message");
+
+let score = 0;
+let hits = 0;
+let clicks = 0;
+let time = 30;
+let gameRunning = false;
+let timer;
+
+let audioCtx;
+
+function sound(freq, duration){
+  try{
+    if(!audioCtx){
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    const oscillator = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    oscillator.frequency.value = freq;
+    oscillator.type = "sine";
+
+    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(
+      0.001,
+      audioCtx.currentTime + duration
+    );
+
+    oscillator.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + duration);
+  }catch(e){}
+}
+
+function updateStats(){
+  scoreEl.textContent = score;
+  hitsEl.textContent = hits;
+
+  const accuracy = clicks === 0
+    ? 0
+    : Math.round((hits / clicks) * 100);
+
+  accuracyEl.textContent = accuracy + "%";
+}
+
+function createTarget(){
+
+  document.querySelectorAll(".target").forEach(t => t.remove());
+
+  const target = document.createElement("div");
+  target.className = "target";
+
+  const rect = game.getBoundingClientRect();
+
+  const x = 35 + Math.random() * (rect.width - 70);
+  const y = 35 + Math.random() * (rect.height - 70);
+
+  target.style.left = x + "px";
+  target.style.top = y + "px";
+
+  target.addEventListener("pointerdown", function(e){
+    e.stopPropagation();
+
+    if(!gameRunning) return;
+
+    hits++;
+    score += 10;
+
+    sound(700,0.08);
+
+    updateStats();
+    createTarget();
+  });
+
+  game.appendChild(target);
+}
+
+game.addEventListener("pointerdown", function(e){
+
+  if(!gameRunning) return;
+
+  if(e.target.classList.contains("target")) return;
+
+  clicks++;
+
+  score = Math.max(0, score - 2);
+
+  sound(180,0.06);
+
+  updateStats();
+});
+
+function startGame(){
+
+  clearInterval(timer);
+
+  score = 0;
+  hits = 0;
+  clicks = 0;
+  time = 30;
+  gameRunning = true;
+
+  startBtn.textContent = "RESTART GAME";
+  messageEl.textContent = "Hit the targets! 🎯";
+
+  updateStats();
+  timeEl.textContent = time;
+
+  createTarget();
+
+  timer = setInterval(() => {
+
+    time--;
+
+    timeEl.textContent = time;
+
+    if(time <= 0){
+      endGame();
+    }
+
+  },1000);
+}
+
+function endGame(){
+
+  clearInterval(timer);
+  gameRunning = false;
+
+  document.querySelectorAll(".target").forEach(t => t.remove());
+
+  const accuracy = clicks === 0
+    ? 0
+    : Math.round((hits / clicks) * 100);
+
+  messageEl.textContent =
+    "Game Over! 🎯 Score: " + score +
+    " | Accuracy: " + accuracy + "%";
+
+  sound(300,0.2);
+}
+
+startBtn.addEventListener("click", startGame);
+
+updateStats();
+</script>
+
+</body>
+</html>
